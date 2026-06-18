@@ -1,0 +1,11 @@
+가상환경 생성(이 경우에는 test라는이름의 가상환경 생성)
+python -m venv test
+
+가상환경 현재 설치된 목록 확인
+(python -m) pip list
+
+현재 설치된 목록을 freeze(그대로) > ./requirements.txt 파일로 저
+(python -m) pip freeze > ./requirements.txt
+
+./requirements.txt 라는 파일을 기준으로 라이브러리 일괄 설치
+(python -m) pip install -r ./requirements.txt
