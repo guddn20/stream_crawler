@@ -1,4 +1,9 @@
 import streamlit as st #스트림릿 페이지
+import time
+import pandas as pd
+# import 대상 -> 파일(.py)
+# from 파일 import 함수, 클래스 -> 해당 파일의 일부 함수/클래스만 임포트
+from crawling import crawling_saramin, crawling_work24
 
 # 레이아웃(웹페이지의 생김새)
 # 스트림릿 웹페이지의 '헤더'역할
@@ -98,3 +103,46 @@ with st.expander("상세 검색 조건", expanded=True):
             }
             edu = st.selectbox('학력을 선택하세요', list(edu_options.keys()))
             edu = edu_options[edu]
+
+# st.button(버튼에 들어갈 글자, '크기 조절 옵션')
+crawling_clicked = st.button("크롤링 시작",
+                             use_container_width=True,
+                             type='primary')
+
+# crawling_clicked -> True (버튼을 눌렀음) / False(버튼을 누르지 않았음)
+if crawling_clicked:
+    st.write("버튼을 누름")
+else:
+    st.write("버튼을 안누름")
+
+# 크롤링 시행!
+# 1. 크롤링한 결과를 어떻게 받아올 것인가?
+df = pd.DataFrame()
+# 2. 크롤링 하는동안 어떻게 안내할 것인가?
+if crawling_clicked :
+    # 2-1. 검색어나 필수요소가 누락된 경우 안내
+    # 검색어(search_text) 누락된 경우(not)
+    if not search_text :
+        st.warning("검색어를 입력해주세요!")
+    # 2-2. 크롤링 시행하는 동안 '기다려주세요' 라는 내용 표시
+    else :
+        with st.spinner(f"{site_select}에서 {search_text} 검색 결과 가져오는 중..."):
+            time.sleep(10)
+        if site_select == "사람인" :
+            # 사람인 사이트의 내용을 크롤링하는 함수
+            df = crawling_saramin(search_text, except_text, locations, category, career, edu, max_pages)
+            #pass
+        else:  
+            # 고용24 사이트의 내용을 크롤링하는 함수
+            df = crawling_work24()
+            # 크롤링
+            pass
+
+    st.session_state['df'] = df
+# st.session_state가 뭘까?
+# 화면을 렌더링할 때에도 데이터프레임의 정보를 기억하도록 만들어준다.
+# session_state는 '딕셔너리'처럼 저장
+# session_state['df']
+# df = st.session_state[df]와 같은 표현
+df = st.session_state.df
+print(df)
