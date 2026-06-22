@@ -38,77 +38,84 @@ def crawling_saramin(
         "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
     }
 
-    # 파라미터 정제 -> 여기서 파라미터는 '검색 조건'
-    #'키'는 웹사이트에서 지정한 키
-    parameters = {'searchword' : search_text,
-                  'except_read': except_text,
-                  'comp_page'  : max_pages
-                  }
+    #page -> 한 페이지 검색 결과
+    
+    for page in range(1, max_pages + 1) :
+        # 파라미터 정제 -> 여기서 파라미터는 '검색 조건'
+        #'키'는 웹사이트에서 지정한 키
+        parameters = {'searchword' : search_text,
+                    'except_read': except_text,
+                    'comp_page'  : page
+                    }
 
-    # 직무
-    if category :
-        parameters['cat_mcd'] = category
-    # 지역
-    if region :
-        parameters['loc_mcd'] = region
-    # 경력
-    if career :
-        parameters['career_cd'] = career
-    # 학력
-    if education :
-        parameters['edu_cd'] = education
+        # 직무
+        if category :
+            parameters['cat_mcd'] = category
+        # 지역
+        if region :
+            parameters['loc_mcd'] = region
+        # 경력
+        if career :
+            parameters['career_cd'] = career
+        # 학력
+        if education :
+            parameters['edu_cd'] = education
 
-    response = requests.get(url, headers=headers,
-                            params=parameters,         #조건에 대한 정보
-                            timeout=15         #html 반환해줄 때까지의 대기시간
-                            )
+        try :
+            response = requests.get(url, headers=headers,
+                                    params=parameters,         #조건에 대한 정보
+                                    timeout=15         #html 반환해줄 때까지의 대기시간
+                                    )
 
-    # 크롤링 결과를 response로 받고,
-    # response 안에 있는 text 파일을 'html.parser'로 파싱
-    # 객체 soup를 생성
-    soup = BeautifulSoup(response.text, 'html.parser')
+            # 크롤링 결과를 response로 받고,
+            # response 안에 있는 text 파일을 'html.parser'로 파싱
+            # 객체 soup를 생성
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-    # 내가 필요한 결과의 '구분자' 전달, 추출
-    # soup.select(구분자) : '구분자'를 보유한 모든 내용
-    # soup.select_one(구분자) : '구분자'를 보유한 내용 딱 하나
-    items = soup.select('div.item_recruit')
+            # 내가 필요한 결과의 '구분자' 전달, 추출
+            # soup.select(구분자) : '구분자'를 보유한 모든 내용
+            # soup.select_one(구분자) : '구분자'를 보유한 내용 딱 하나
+            items = soup.select('div.item_recruit')
 
-    for item in items:
-        job_area = item.select_one('div.area_job')
-        corp_area = item.select_one("div.area_corp")
+            for item in items:
+                job_area = item.select_one('div.area_job')
+                corp_area = item.select_one("div.area_corp")
 
-        # 직무 정보가 없다!
-        if not job_area :
-            # 한 칸의 정보가 없을 때에는 '이번에만 넘어가자'
-            continue
+                # 직무 정보가 없다!
+                if not job_area :
+                    # 한 칸의 정보가 없을 때에는 '이번에만 넘어가자'
+                    continue
 
-        # 직무, 회사정보 get
-        job_title = job_area.select_one('.job_tit').get_text(strip=True)
-        condition_area = job_area.select_one('.job_condition')
-        spans = condition_area.select('span')
+                # 직무, 회사정보 get
+                job_title = job_area.select_one('.job_tit').get_text(strip=True)
+                condition_area = job_area.select_one('.job_condition')
+                spans = condition_area.select('span')
 
-        location = spans[0].get_text(strip=True)
-        condition1 = spans[1].get_text(strip=True)
+                location = spans[0].get_text(strip=True)
+                condition1 = spans[1].get_text(strip=True)
 
-        # condition2 = spans[-1].get_text(strip=True)
-        job_sector = item.select_one('div.job_sector')
-        condition2 = job_sector.get_text(strip=True)
+                # condition2 = spans[-1].get_text(strip=True)
+                job_sector = item.select_one('div.job_sector')
+                condition2 = job_sector.get_text(strip=True)
 
-        # 회사 정보
-        corp_name = corp_area.select_one('.corp_name').get_text(strip=True)
+                # 회사 정보
+                corp_name = corp_area.select_one('.corp_name').get_text(strip=True)
 
-        # 링크
-        link = job_area.select_one('.job_tit').select_one('.data_layer[href]')
-        real_link = 'https://www.saramin.co.kr' + link.get('href')
+                # 링크
+                link = job_area.select_one('.job_tit').select_one('.data_layer[href]')
+                real_link = 'https://www.saramin.co.kr' + link.get('href')
 
-        rows.append({
-            '이름':job_title,
-            '위치':location,
-            '조건1':condition1,
-            '조건2':condition2,
-            '회사이름':corp_name,
-            '링크':real_link
-        })
+                rows.append({
+                    '이름':job_title,
+                    '위치':location,
+                    '조건1':condition1,
+                    '조건2':condition2,
+                    '회사이름':corp_name,
+                    '링크':real_link
+                })
+        except Exception as e :
+            print(f'에러 발생 : {e}')
+            break
 
     df = pd.DataFrame(rows)
     # print(df)
@@ -123,7 +130,7 @@ def crawling_work24(
                     category: list = None,
                     career: str = "",
                     education: str = "",
-                    max_pages: int = 1,
+                    max_pages: int = 1
                     ):
 
     url = 'https://www.work24.go.kr/wk/a/b/1200/retriveDtlEmpSrchList.do'
@@ -170,58 +177,45 @@ def crawling_work24(
 
         money = item2.select_one("span.item.b1_sb").get_text(strip=True)
         money = re.sub(r'\s+', '', money)
-
-        # work_time = item2.select_one("li.time")
-        # t = ''
-        # if work_time :
-        #     if len(work_time) > 1 :
-        #         for i in range(len(work_time)):
-        #             t += work_time.select('span')[i].text
-        #     elif len(work_time) == 1:
-        #         t = work_time.select_one('span').text
-        #     else :
-        #         t = ''
-        # else:
-        #     t = ''
-        # print(t)
-    if items2.select_one('ul.emp_info_dtl').has_attr('li'):
-        t = ''
-        work_time = items2.select_one("ul.emp_info_dtl").select_one("li.time")
-        if len(work_time) > 1:
-            for i in range(len(work_time)):
-                t += work_time.select('span')[i].text
-        elif len(work_time) == 1:
-            t = work_time.select_one('span').text
-        else:
+        
+        if item2.select_one('ul.emp_info_dtl').has_attr('li'):
             t = ''
-        work_time = t
-    else:
-        work_time = "모름"
+            work_time = item2.select_one("ul.emp_info_dtl").select_one("li.time")
+            if len(work_time) > 1:
+                for i in range(len(work_time)):
+                    t += work_time.select('span')[i].text
+            elif len(work_time) == 1:
+                t = work_time.select_one('span').text
+            else:
+                t = ''
+            work_time = t
+        else:
+            work_time = "모름"
 
-    link = cell[1].select_one('a').get('href')
-    real_link = 'https://www.work24.go.kr' + link
+        link = cell[1].select_one('a').get('href')
+        real_link = 'https://www.work24.go.kr' + link
 
-    location = (
-        items2.select_one("ul.emp_info_dtl").select_one("li.site").get_text(strip=True)
-    )
-    location = re.sub(r'\s+', '', location)
-    print(location)
-
-    rows.append({
-            '이름':name,
-            '위치':location,
-            '연봉':money,
-            '근무시간':work_time,
-            '회사이름':corp_name,
-            '링크':real_link
-            }
+        location = (
+            item2.select_one("ul.emp_info_dtl").select_one("li.site").get_text(strip=True)
         )
+        location = re.sub(r'\s+', '', location)
+        #print(real_link)
+
+        rows.append({
+                '이름':name,
+                '위치':location,
+                '연봉':money,
+                '근무시간':work_time,
+                '회사이름':corp_name,
+                '링크':real_link
+                }
+            )
 
     df = pd.DataFrame(rows)
-    print(df)
+    #print(df)
 
-    return "work24"
+    return df
 
 
 # if __name__ == '__main__':
-#      crawling_work24('빅데이터')
+#      crawling_work24('인공지능')
