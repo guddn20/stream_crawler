@@ -133,7 +133,7 @@ if crawling_clicked :
     else :
         with st.spinner(f"{site_select}에서 {search_text} 검색 결과 가져오는 중..."):
             time.sleep(10)
-        if site_select == "사람인" :
+        if site_select == "사람인(Saramin)":
             # 사람인 사이트의 내용을 크롤링하는 함수
             df = crawling_saramin(search_text = search_text,
                                   except_text = except_text,
@@ -154,7 +154,7 @@ if crawling_clicked :
                     education = edu,
                     max_pages = max_pages )
             # 크롤링
-            
+
     st.session_state['df'] = df
 # st.session_state가 뭘까?
 # 화면을 렌더링할 때에도 데이터프레임의 정보를 기억하도록 만들어준다.
