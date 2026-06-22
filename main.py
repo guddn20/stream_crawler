@@ -3,7 +3,7 @@ import time
 import pandas as pd
 # import 대상 -> 파일(.py)
 # from 파일 import 함수, 클래스 -> 해당 파일의 일부 함수/클래스만 임포트
-from crawling import crawling_saramin, crawling_work24
+from crawling import crawling_saramin, crawling_work24, download_to_csv
 
 # 레이아웃(웹페이지의 생김새)
 # 스트림릿 웹페이지의 '헤더'역할
@@ -118,6 +118,10 @@ else:
 # 크롤링 시행!
 # 1. 크롤링한 결과를 어떻게 받아올 것인가?
 df = pd.DataFrame()
+
+if "df" not in st.session_state:
+    st.session_state["df"] = pd.DataFrame()
+    
 # 2. 크롤링 하는동안 어떻게 안내할 것인가?
 if crawling_clicked :
     # 2-1. 검색어나 필수요소가 누락된 경우 안내
@@ -150,11 +154,24 @@ if crawling_clicked :
                     max_pages = max_pages )
             # 크롤링
             
-    st.session_state['df'] = df
+        st.session_state['df'] = df
 # st.session_state가 뭘까?
 # 화면을 렌더링할 때에도 데이터프레임의 정보를 기억하도록 만들어준다.
 # session_state는 '딕셔너리'처럼 저장
 # session_state['df']
 # df = st.session_state[df]와 같은 표현
+
 df = st.session_state.df
-st.write(df)
+
+if not df.empty :
+    st.subheader('검색 결과')
+    st.dataframe(df, use_container_width=True, hide_index=True)
+
+    csv_data = download_to_csv(df)
+    st.download_button(label='CSV 결과 다운로드',
+                       data=csv_data,
+                       file_name = f'crawling_results_{site_select}.csv',
+                       mime='text/csv')
+
+
+# st.write(df)

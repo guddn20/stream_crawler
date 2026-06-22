@@ -4,6 +4,7 @@ import requests                 #인터넷 주소(url)에 html 파일을 요청
 from bs4 import BeautifulSoup   #그렇게 해서 얻어온 html 파일을 예쁘게 '파싱'(필요 정보 추출)
 import pandas as pd             
 import re                       #정규표현식(regular expression), 문자열 정제
+from io import StringIO
 
 # 검색어, 제외할 검색어, 지역, 직무, 경력, 학력, 페이지 수
 # 매개변수에 입력될 자료형 '미리 안내'
@@ -13,6 +14,14 @@ import re                       #정규표현식(regular expression), 문자열 
 # soup 객체로 파싱, 가지고 있다가 select(), select_one()으로 필요한 파트 추출
 # 처음에 초기화 해놓은 rows에 append해서 최종적인 모양 만듦
 
+# buffer(임시 데이터) 상태인 df를 encode한 후 결과를 반환해주는 코드
+# 지금은 내 컴퓨터(로컬)이지만, 배포 후 '클라우드'에 존재
+# 클라우드에서 임시 파일인 buffer를 받아와서 내 컴퓨터에 다운로드 시켜주는 것
+def download_to_csv(df) :
+    buffer = StringIO()
+    df.to_csv(buffer, index=False)
+    return buffer.getvalue().encode('utf-8-sig')
+    
 def crawling_saramin(
     search_text: str ,
     except_text: str = "",
@@ -121,7 +130,6 @@ def crawling_saramin(
     # print(df)
 
     return df
-
 
 def crawling_work24(
                     search_text: str,
