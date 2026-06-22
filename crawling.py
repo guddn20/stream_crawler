@@ -154,7 +154,7 @@ def crawling_work24(
     # soup.select(구분자) : '구분자'를 보유한 모든 내용
     # soup.select_one(구분자) : '구분자'를 보유한 내용 딱 하나
     # items = soup.select("div.box_table_group.gap_box08.column")
-    items = soup.select("td.al_left.pd24")
+    items = soup.select("div.box_table_group.gap_box08.column")
     items2 = soup.select("td.link.pd24")
     # print(items) #디버깅
     rows = []
@@ -164,49 +164,64 @@ def crawling_work24(
     for item, item2 in zip(items, items2):
         # 3.이름, 위치, 조건1, 조건2, 회사이름, 링크 -> soup 파싱에서 추출
 
-        job_area = item.select("div.box_table_group.gap_box08.column")
         cell = item.select("div.cell")
-        money = item2.select_one("span.item.b1_sb").get_text(strip=True)
-        # condition_area = item.select("td.link.pd24")
-
-        # spans = condition_area.select('span')
-
         name = cell[1].get_text(strip=True)
         corp_name = cell[0].get_text(strip=True)
-        # money = item2.select_one("li.dollar").get_text(strip=True)
 
+        money = item2.select_one("span.item.b1_sb").get_text(strip=True)
         money = re.sub(r'\s+', '', money)
-        work_time = item2.select_one("li.time")
+
+        # work_time = item2.select_one("li.time")
+        # t = ''
+        # if work_time :
+        #     if len(work_time) > 1 :
+        #         for i in range(len(work_time)):
+        #             t += work_time.select('span')[i].text
+        #     elif len(work_time) == 1:
+        #         t = work_time.select_one('span').text
+        #     else :
+        #         t = ''
+        # else:
+        #     t = ''
+        # print(t)
+    if items2.select_one('ul.emp_info_dtl').has_attr('li'):
         t = ''
-        if work_time : 
-            if len(work_time) > 1 :
-                for i in range(len(work_time)):
-                    t += work_time.select('span')[i].text
-            elif len(work_time) == 1:
-                t = work_time.select_one('span').text
-            else :
-                t = ''
+        work_time = items2.select_one("ul.emp_info_dtl").select_one("li.time")
+        if len(work_time) > 1:
+            for i in range(len(work_time)):
+                t += work_time.select('span')[i].text
+        elif len(work_time) == 1:
+            t = work_time.select_one('span').text
         else:
             t = ''
-        print(t)                
-        #location = item2.select_one("li.site").get_text(strip=True)
-        #link = cell[1].select_one("a.href")
-        # real_link = "https://www.work24.go.kr" + link.get("href")
-    # rows.append(
-    #     {
-    #         "이름": name,
-    #         "위치": location,
-    #         "근무시간": work_time,
-    #         "연봉": money,
-    #         "회사이름": corp_name,
-    #         "링크" : link
-    #     }
-    # )
+        work_time = t
+    else:
+        work_time = "모름"
 
-    # df = pd.DataFrame(rows)
-    # print(df)
-    # return "고용24 결과"
+    link = cell[1].select_one('a').get('href')
+    real_link = 'https://www.work24.go.kr' + link
+
+    location = (
+        items2.select_one("ul.emp_info_dtl").select_one("li.site").get_text(strip=True)
+    )
+    location = re.sub(r'\s+', '', location)
+    print(location)
+
+    rows.append({
+            '이름':name,
+            '위치':location,
+            '연봉':money,
+            '근무시간':work_time,
+            '회사이름':corp_name,
+            '링크':real_link
+            }
+        )
+
+    df = pd.DataFrame(rows)
+    print(df)
+
+    return "work24"
 
 
-if __name__ == '__main__':
-     crawling_work24('빅데이터')
+# if __name__ == '__main__':
+#      crawling_work24('빅데이터')
